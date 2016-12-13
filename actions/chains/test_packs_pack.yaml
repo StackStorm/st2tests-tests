@@ -1,0 +1,202 @@
+---
+vars:
+        base_repo_url: "https://github.com/StackStorm"
+        pack_to_install_1: "datadog"
+        pack_to_install_2: "consul"
+        pack_to_install_with_no_config: "freight"
+        install_from_repo: "st2contrib"
+        test_timeout: 180
+
+chain:
+    -
+        name: setup_check_pack_to_install_1_installed
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 action list --pack {{ pack_to_install_1 }} | grep 'No matching items found'"
+            timeout: "{{test_timeout}}"
+        on-success: setup_check_pack_to_install_2_installed
+        on-failure: setup_uninstall_pack_to_install_1
+    -
+        name: setup_uninstall_pack_to_install_1
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 pack remove {{ pack_to_install_1 }}"
+            timeout: "{{test_timeout}}"
+        on-success: setup_check_pack_to_install_2_installed
+        on-failure: error_handler
+    -
+        name: setup_check_pack_to_install_2_installed
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 action list --pack {{ pack_to_install_2 }} | grep 'No matching items found'"
+            timeout: "{{test_timeout}}"
+        on-success: test_packs_install_multiple_packs
+        on-failure: setup_uninstall_pack_to_install_2
+    -
+        name: setup_uninstall_pack_to_install_2
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 pack remove {{ pack_to_install_2 }}"
+            timeout: "{{test_timeout}}"
+        on-success: test_packs_install_multiple_packs
+        on-failure: error_handler
+    -
+        name: test_packs_install_multiple_packs
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 pack install {{ pack_to_install_1 }} {{ pack_to_install_2 }}"
+            timeout: "{{test_timeout}}"
+        on-success: test_check_pack_to_install_1_installed
+        on-failure: error_handler
+    -
+        name: test_check_pack_to_install_1_installed
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 action list -j --pack {{ pack_to_install_1 }} | grep '{{ pack_to_install_1 }}'"
+            timeout: "{{test_timeout}}"
+        on-success: test_check_pack_to_install_2_installed
+        on-failure: error_handler
+    -
+        name: test_check_pack_to_install_2_installed
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 action list -j --pack {{ pack_to_install_2 }} | grep '{{ pack_to_install_2 }}'"
+            timeout: "{{test_timeout}}"
+        on-success: test_packs_uninstall_multiple_packs
+        on-failure: error_handler
+    -
+        name: test_packs_uninstall_multiple_packs
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 pack remove {{ pack_to_install_1 }} {{ pack_to_install_2 }}"
+            timeout: "{{test_timeout}}"
+        on-success: test_check_pack_to_install_1_uninstalled
+        on-failure: error_handler
+    -
+        name: test_check_pack_to_install_1_uninstalled
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 action list --pack {{ pack_to_install_1 }} | grep 'No matching items found'"
+            timeout: "{{test_timeout}}"
+        on-success: test_check_pack_to_install_2_uninstalled
+        on-failure: error_handler
+    -
+        name: test_check_pack_to_install_2_uninstalled
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 action list --pack {{ pack_to_install_2 }} | grep 'No matching items found'"
+            timeout: "{{test_timeout}}"
+        on-success: test_packs_load_register_all
+        on-failure: error_handler
+    -
+        name: test_packs_load_register_all
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            # triggers, sensors, actions, rules, aliases, policy types, policies, configs -> 9
+            # 9 post pluggable runners
+            cmd: "st2 pack register"  # --fail-on-failure support needed. https://stackstorm.atlassian.net/browse/STORM-2456
+            timeout: "{{test_timeout}}"
+        on-success: test_pack_install_with_no_config
+        on-failure: error_handler
+    -
+        name: test_pack_install_with_no_config
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 pack install {{ pack_to_install_with_no_config }}"
+            timeout: "{{test_timeout}}"
+        on-success: test_pack_reinstall_with_no_config
+        on-failure: error_handler
+    -
+        name: test_pack_reinstall_with_no_config
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "st2 pack install {{ pack_to_install_with_no_config }}"
+            timeout: "{{test_timeout}}"
+        on-success: success_handler
+        on-failure: error_handler
+    -
+        name: success_handler
+        ref: core.local
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "echo packs pack test succeed; exit 0"
+    -
+        name: error_handler
+        description: Error handler
+        ref: "core.local"
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "echo packs pack test failed; exit 1"

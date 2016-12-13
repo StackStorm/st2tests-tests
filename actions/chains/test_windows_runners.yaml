@@ -1,0 +1,89 @@
+---
+vars:
+        samba_client_version: "4.1"
+        winexe_version: "1.1"
+
+chain:
+    -
+        name: "test_samba_client"
+        ref: "core.local"
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "smbclient --version | grep 'Version {{samba_client_version}}'"
+        on-success: "test_winexe"
+    -
+        name: "test_winexe"
+        ref: "core.local"
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "winexe 2>&1 | grep 'version {{winexe_version}}'"
+        on-success: "is_windows_host_provided"
+    -
+        name: "is_windows_host_provided"
+        ref: "core.local"
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "test -n '{{windows_host}}'"
+        on-success: "run_windows_cmd_action"
+        on-failure: "skip_actual_tests"
+    -
+        name: "skip_actual_tests"
+        ref: "core.local"
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "echo 'Windows host was not provided - skipping actual tests'; exit 0"
+    -
+        name: "run_windows_cmd_action"
+        ref: "core.windows_cmd"
+        params:
+            host: "{{windows_host}}"
+            username: "{{windows_username}}"
+            password: "{{windows_password}}"
+            cmd: "cmd /c ver"
+        on-success: "check_windows_cmd_action"
+    -
+        name: "check_windows_cmd_action"
+        ref: "core.local"
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "echo '{{run_windows_cmd_action.result}}' | grep 'Microsoft Windows'"
+        on-success: "run_windows_powershell_script_example"
+    -
+        name: "run_windows_powershell_script_example"
+        ref: "examples.get_windows_uptime"
+        params:
+            host: "{{windows_host}}"
+            username: "{{windows_username}}"
+            password: "{{windows_password}}"
+            share: "C$"
+        on-success: "check_windows_powershell_script_example"
+    -
+        name: "check_windows_powershell_script_example"
+        ref: "core.local"
+        params:
+            env:
+              ST2_BASE_URL: "{{protocol}}://{{hostname}}"
+              ST2_AUTH_URL: "{{protocol}}://{{hostname}}:9100"
+              ST2_API_URL: "{{protocol}}://{{hostname}}:9101"
+              ST2_AUTH_TOKEN: "{{token}}"
+            cmd: "echo '{{run_windows_powershell_script_example.result}}' | grep 'Uptime: .* days, .* hours, .* minutes'"
