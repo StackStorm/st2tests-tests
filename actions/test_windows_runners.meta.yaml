@@ -1,0 +1,32 @@
+---
+# Action definition metadata
+name: "test_windows_runners"
+description: "Workflow tests Windows runners"
+runner_type: "action-chain"
+enabled: true
+entry_point: "chains/test_windows_runners.yaml"
+parameters:
+  token:
+    type: "string"
+    description: "st2 auth token"
+    default: ""
+  windows_host:
+    type: "string"
+    description: "Windows host name. If not specified, test will only check prerequisites"
+    default: ""
+  windows_username:
+    type: "string"
+    description: "Windows username. Default is Administrator"
+    default: "Administrator"
+  windows_password:
+    type: "string"
+    description: "Windows password"
+    default: ""
+  protocol:
+    type: "string"
+    description: "http/https"
+    default: "http"
+  hostname:
+    type: "string"
+    description: "St2 host to run tests against"
+    default: "127.0.0.1"
